@@ -1,0 +1,75 @@
+* Currency
+
+
+; https://finance.yahoo.com/quote/600519.SS/
+2019-01-01 commodity CNY
+	name: "人民币"
+	asset-class: "cash"
+2019-01-01 commodity CNH
+	name: "离岸人民币"
+	asset-class: "cash"
+	price: "CNY:yahoo/CNHCNY=X"
+2019-01-01 commodity USD
+	name: "美元"
+	asset-class: "cash"
+	price: "CNY:yahoo/USDCNY=X"
+2019-01-01 commodity JPY
+	name: "日元"
+	asset-class: "cash"
+	price: "CNY:yahoo/JPYCNY=X"
+2019-01-01 commodity HKD
+	name: "港元"
+	asset-class: "cash"
+	price: "CNY:yahoo/HKDCNY=X"
+
+2019-01-01 commodity BTC
+	name: "比特币"
+	asset-class: "cash"
+	price: "USD:yahoo/BTCUSD=X"
+
+* Symbol
+
+2019-06-07 commodity AAPL
+	name: "Apple Inc."
+	asset-class: "stock"
+	price: "USD:xueqiu/US:AAPL,yahoo/AAPL"
+
+2019-06-07 commodity SPY
+	name: "SPDR S&P 500 ETF"
+	asset-class: "stock"
+	price: "USD:xueqiu/US:SPY,yahoo/SPY"
+
+2019-06-07 commodity HK_0700
+	name: "腾讯控股"
+	asset-class: "stock"
+	price: "HKD:xueqiu/HK:00700,yahoo/0700.HK"
+
+2019-06-07 commodity HK_2800
+	name: "盈富基金"
+	asset-class: "stock"
+	price: "HKD:xueqiu/HK:02800,yahoo/2800.HK"
+
+2019-06-07 commodity CN_F110011
+	name: "易方达中小盘混合"
+	asset-class: "fund"
+	price: "CNY:eastmoney/F110011"
+
+2019-01-01 commodity CN_F000187
+	name: "华泰柏瑞丰盛纯债债券A"
+	asset-class: "fund"
+	price: "CNY:eastmoney/F000187"
+
+2019-01-01 commodity CN_510300
+	name: "华泰沪深300ETF"
+	asset-class: "fund"
+	price: "CNY:xueqiu/CN:SH510300,yahoo/510300.SS"
+
+2019-01-01 commodity CN_000001
+    name: "平安银行"
+	asset-class: "stock"
+	price: "CNY:xueqiu/CN:SZ000001,yahoo/000001.SZ"
+
+2019-01-01 commodity CN_128047
+    name: "光电转债"
+	asset-class: "bond"
+	price: "CNY:xueqiu/CN:SZ128047"
