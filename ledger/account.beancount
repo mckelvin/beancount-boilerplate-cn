@@ -125,6 +125,7 @@
 	name: "交易税费"
 
 2000-01-01 open Assets:CryptoCoins:Positions "FIFO"
+2000-01-01 open Assets:CryptoCoins:Coinbase:Positions "FIFO"
 
 * Other
 

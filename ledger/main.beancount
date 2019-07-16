@@ -17,6 +17,8 @@ include "salary.beancount"
 include "daily/2019.beancount"
 
 ;; 标的
+include "commodity.beancount"
+
 include "invest.beancount"
 include "prices.beancount"
-include "commodity.beancount"
+include "cryptocoin.beancount"
