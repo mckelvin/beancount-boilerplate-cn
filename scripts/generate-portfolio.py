@@ -12,6 +12,7 @@ import csv
 import datetime
 import logging
 import collections
+from decimal import Decimal
 import io
 
 import click
@@ -39,11 +40,11 @@ def sort_key(row):
     """
     asset_class = row["一级类别"]
     asset_subclass = row["二级类别"]
-    ac_list = ["现金", "债券", "基金", "股票", "另类资产"]
+    ac_list = ["现金", "债券", "债权", "基金", "股票", "股权", "另类资产", "另类"]
     asc_list = [
         "本币", "外汇", "债券基金", "可转换债券", "指数基金",
-        "偏股混合基金", "中国股票", "香港股票", "美国股票", "贵金属",
-        "加密货币"
+        "偏股混合基金", "A股", "中国股票", "港股", "香港股票",
+        "美股", "美国股票", "贵金属", "加密货币",
     ]
     factor1 = ac_list.index(asset_class)
     factor2 = asc_list.index(asset_subclass)
@@ -152,7 +153,6 @@ def get_portfolio_matrix(asof_date=None):
             "二级类别": holding["asset_subclass"],
             "标的": holding["symbol_name"],
             "代号": symbol,
-            "可支配": "是" if not account_nondisposable else "否",
             "持仓量": "%.3f" % total_qty,
             "市场价格": "%.4f" % holding["price"],
             "报价日期": holding["price_date"],
@@ -162,6 +162,11 @@ def get_portfolio_matrix(asof_date=None):
         }
         rows.append(row)
     rows.sort(key=sort_key)
+    for row in rows:
+        pct = Decimal(row["人民币价值"]) / cum_networth
+        row.update({
+            "占比": "%.2f%%" % (100 * pct)
+        })
     return rows, cum_networth
 
 
