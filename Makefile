@@ -1,4 +1,15 @@
 all: prices
 
 prices:
-	PYTHONPATH=`pwd`/sources bean-price -i ledger/main.beancount >> ledger/prices.beancount
+	./scripts/update-prices.py | sh
+fava:
+	fava ledger/main.beancount
+
+%:
+	bean-$@ ledger/main.beancount
+
+portfolio:
+	@./scripts/generate-portfolio.py
+
+networth:
+	@./scripts/generate-networth-report.py
