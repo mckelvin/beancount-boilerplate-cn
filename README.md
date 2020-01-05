@@ -137,7 +137,7 @@ bean-extract importers/spdccc_importer.py raw-data/spdbcc/2019-05-spdbcc.csv > l
 ./scripts/generate-portfolio.py  # 查看当前持仓
 ```
 
-输出的csv格式持仓可以导入表格软件进一步分析，或者使用 [tabview](https://pypi.org/project/tabview/) 直接在终端浏览。例子:
+输出的csv格式持仓可以[导入表格软件](https://bitbucket.org/blais/beancount/src/default/beancount/tools/sheets_upload.py)进一步分析，或者使用 [tabview](https://pypi.org/project/tabview/) 直接在终端浏览。例子:
 
 |一级类别|二级类别  |标的              |代号        |持仓量       |市场价格     |报价日期      |市场价值  |货币  |人民币价值    |占比    |
 |----|------|----------------|----------|----------|---------|----------|------|----|---------|------|
@@ -165,7 +165,7 @@ bean-extract importers/spdccc_importer.py raw-data/spdbcc/2019-05-spdbcc.csv > l
 ./scripts/generate-networth-report.py -s 2019-12-01  # 查看某一日至今的净值
 ```
 
-输出的csv格式持仓可以导入表格软件进一步分析，或者使用 [tabview](https://pypi.org/project/tabview/) 直接在终端浏览。例子:
+输出的csv格式持仓可以[导入表格软件](https://bitbucket.org/blais/beancount/src/default/beancount/tools/sheets_upload.py)进一步分析，或者使用 [tabview](https://pypi.org/project/tabview/) 直接在终端浏览。例子:
 
 |            |           |           |       |       |          |          |        |
 |------------|-----------|-----------|-------|-------|----------|----------|--------|
