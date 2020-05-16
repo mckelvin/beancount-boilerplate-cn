@@ -37,6 +37,20 @@ pip install -r requirements.txt
 	- 蚂蚁财富(支付宝)基金账户
 	- 天天基金账户
 
+### 如何查看报表
+
+1. 在 https://docs.google.com/spreadsheets 新建一个表格，复制URL中的ID部分到`local/gdocid` 这个文件中。
+
+```bash
+# 比如 https://docs.google.com/spreadsheets/d/1jnds3X_-RSTN4ATuOFV-v6tar0KfAla88vC43Vq6ubc/edit?usp=sharing
+$ cat local/gdocid
+1jnds3X_-RSTN4ATuOFV-v6tar0KfAla88vC43Vq6ubc
+```
+
+2. `make prices` 确认标的价格是最新的
+3. `make spreadsheets` 生成净值和持仓csv文件，并上传到上述新建的spreadsheet. 期间可能会提示配置 Google Docs 的 API Key, 按提示进行即可。
+
+
 ### 如何初始化/已有帐本迁移过来
 
 可见 `ledger/init.beancount` 文件中初始化的过程

@@ -42,7 +42,7 @@ def sort_key(row):
     asset_subclass = row["二级类别"]
     ac_list = ["现金", "债券", "债权", "基金", "股票", "股权", "另类资产", "另类"]
     asc_list = [
-        "本币", "外汇", "债券基金", "可转换债券", "指数基金",
+        "本币", "外汇", "债券基金", "可转换债券", "指数基金", '偏债混合基金',
         "偏股混合基金", "A股", "中国股票", "港股", "香港股票",
         "美股", "美国股票", "贵金属", "加密货币",
     ]
@@ -84,6 +84,7 @@ def get_portfolio_matrix(asof_date=None):
         currency_obj = commoditiy_map[holding.currency]
         if currency_obj is None:
             raise ValueError("commoditiy is not defined for %s" % holding)
+
         if bool(int(account_obj.meta.get("sunk", 0))):
             logger.warn(f"{account_obj.account} is an sunk. Ignored.")
             continue
@@ -98,7 +99,9 @@ def get_portfolio_matrix(asof_date=None):
                     "" % (holding.currency, meta_field)
                 )
 
-        account_name = account_obj.meta["name"]
+        account_name = account_obj.meta.get("name")
+        if not account_name:
+            raise ValueError("Account name not set for %s" % holding.account)
         account_nondisposable = bool(int(account_obj.meta.get("nondisposable", 0)))
         symbol_name = currency_obj.meta["name"]
         asset_class = currency_obj.meta["asset-class"]
@@ -144,9 +147,11 @@ def get_portfolio_matrix(asof_date=None):
             qty_by_account[holding["account"]] += holding["quantity"]
 
         total_qty = sum(qty_by_account.values())
-        holding0 = holdings[0]
+        hld_px = holding["price"]
+        if hld_px is None:
+            raise ValueError(f"price not found for {holding}")
 
-        networth = holding["cny_rate"] * holding["price"] * total_qty
+        networth = holding["cny_rate"] * hld_px * total_qty
         cum_networth += networth
         row = {
             "一级类别": holding["asset_class"],
@@ -175,7 +180,7 @@ def print_portfolio_csv(rows):
     writer = csv.DictWriter(fhandler, fieldnames=rows[0].keys())
     writer.writeheader()
     writer.writerows(rows)
-    print(fhandler.getvalue())
+    print(fhandler.getvalue().strip())
 
 
 @click.command()

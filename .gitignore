@@ -1,2 +1,4 @@
 __pycache__/
 .py[oc]
+ledger/latest-prices.beancount
+local/
