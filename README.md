@@ -49,7 +49,9 @@ $ cat local/gdocid
 
 2. `make prices` 确认标的价格是最新的
 3. `make spreadsheets` 生成净值和持仓csv文件，并上传到上述新建的spreadsheet. 期间可能会提示配置 Google Docs 的 API Key, 按提示进行即可。
+4. `净值`和`持仓`分别会出现在2个sheet里，如果需要报表的话，可以基于这些数据新建一个sheet放报表。举个例子：
 
+[![](https://raw.githubusercontent.com/mckelvin/beancount-boilerplate-cn/dev/.github/screenshot/report-demo.png)](https://docs.google.com/spreadsheets/d/1jnds3X_-RSTN4ATuOFV-v6tar0KfAla88vC43Vq6ubc/edit#gid=0)
 
 ### 如何初始化/已有帐本迁移过来
 
