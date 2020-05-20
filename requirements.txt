@@ -23,9 +23,8 @@ google-api-python-client==1.8.3  # via beancount
 google-auth-httplib2==0.0.3  # via google-api-python-client
 google-auth==1.14.3       # via google-api-core, google-api-python-client, google-auth-httplib2
 googleapis-common-protos==1.51.0  # via google-api-core
-httplib2==0.17.3          # via -r requirements.in, google-api-python-client, google-auth-httplib2, oauth2client
+httplib2==0.18.0          # via -r requirements.in, google-api-python-client, google-auth-httplib2, oauth2client
 idna==2.9                 # via requests
-importlib-metadata==1.6.0  # via pluggy, pytest
 itsdangerous==1.1.0       # via flask
 jaraco.functools==3.0.1   # via cheroot
 jinja2==2.11.2            # via fava, flask, flask-babel
@@ -56,7 +55,6 @@ uritemplate==3.0.1        # via google-api-python-client
 urllib3==1.25.9           # via apiclient, requests
 wcwidth==0.1.9            # via pytest
 werkzeug==1.0.1           # via fava, flask
-zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
