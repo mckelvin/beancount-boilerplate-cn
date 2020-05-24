@@ -5,3 +5,4 @@ requests
 apiclient
 oauth2client
 httplib2
+pandas
