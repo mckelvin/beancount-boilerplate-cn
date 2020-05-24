@@ -34,11 +34,11 @@
 2000-01-01 open Expenses:Comm:Express
   name: "交流通讯/邮寄费"
 2000-01-01 open Expenses:Comm:Internet
-  name: "交流通讯/注册费"
-2000-01-01 open Expenses:Comm:Registry
   name: "交流通讯/上网费"
+2000-01-01 open Expenses:Comm:Registry
+  name: "交流通讯/注册费"
 2000-01-01 open Expenses:Clothes:Clothes
-  name: "交流通讯/邮寄费"
+  name: "衣服饰品/衣服裤子"
 2000-01-01 open Expenses:Home:Groceries
   name: "居家物业/生活用品"
 2000-01-01 open Expenses:Home:Rental
