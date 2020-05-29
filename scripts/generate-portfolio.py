@@ -86,10 +86,10 @@ def get_portfolio_matrix(asof_date=None):
             raise ValueError("commoditiy is not defined for %s" % holding)
 
         if bool(int(account_obj.meta.get("sunk", 0))):
-            logger.warn(f"{account_obj.account} is an sunk. Ignored.")
+            logger.warning(f"{account_obj.account} is an sunk. Ignored.")
             continue
         if bool(int(account_obj.meta.get("nondisposable", 0))):
-            logger.warn(f"{account_obj.account} is nondisposable. Ignored.")
+            logger.warning(f"{account_obj.account} is nondisposable. Ignored.")
             continue
 
         for meta_field in ("name", "asset-class", "asset-subclass"):

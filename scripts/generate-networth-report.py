@@ -30,6 +30,9 @@ KNOWN_ASSET_CLASSES = {
     "债权",
     "现金",
 }
+EXPENSES_PREFIX = "Expenses:"
+EXPENSES_TRADE_PREFIX = "Expenses:Trade:"
+EXPENSES_PREPAYMENTS_PREFIX = "Assets:PrePayments"
 
 
 def get_maps(entries):
@@ -74,16 +77,18 @@ def compute_networth_series(since_date, end_date=None):
         holdings_list, price_map_to_date = holdings_reports.get_assets_holdings(
             entries_to_date, options_map, target_currency
         )
-        networth_in_cny = 0
-        disposable_networth_in_cny = 0
+        raw_networth_in_cny = decimal.Decimal(0)  # 包含sunk资产的理论净资产
+        networth_in_cny = decimal.Decimal(0)  # 不包含sunk资产的净资产
+        disposable_networth_in_cny = decimal.Decimal(0)
         dnw_by_asset_class = {}
 
         for hld in holdings_list:
             acc = account_map[hld.account]
             cmdt = commodity_map[hld.currency]
             if hld.market_value is None:
-                raise ValueError(f"{curr_date}: {hld}")
+                raise ValueError(hld)
 
+            raw_networth_in_cny += hld.market_value
             # 预付但大部分情况下不能兑现的沉没资产，比如预付的未来房租
             is_sunk = bool(int(acc.meta.get("sunk", 0)))
             if is_sunk:
@@ -95,7 +100,7 @@ def compute_networth_series(since_date, end_date=None):
                 disposable_networth_in_cny += hld.market_value
                 asset_class = cmdt.meta["asset-class"]
                 if asset_class not in dnw_by_asset_class:
-                    dnw_by_asset_class[asset_class] = 0
+                    dnw_by_asset_class[asset_class] = decimal.Decimal(0)
                 dnw_by_asset_class[asset_class] += hld.market_value
 
             networth_in_cny += hld.market_value
@@ -106,21 +111,26 @@ def compute_networth_series(since_date, end_date=None):
                 isinstance(entry, beancount.core.data.Transaction)
         ]
 
-        non_trade_expenses = 0
-        non_trade_incomes = 0
+        non_trade_expenses = decimal.Decimal(0)
+        non_trade_incomes = decimal.Decimal(0)
         for tx in txs_of_date:
             for posting in tx.postings:
                 acc = posting.account
-                is_nt_exp = acc.startswith("Expenses:") and not acc.startswith("Expenses:Trade:")
-                is_nt_inc = acc.startswith("Income:") and not acc.startswith("Income:Trade:")
-                if is_nt_exp or is_nt_inc:
+                is_non_trade_exp = (
+                    acc.startswith(EXPENSES_PREFIX) and not acc.startswith(EXPENSES_TRADE_PREFIX)
+                ) or (
+                    acc.startswith(EXPENSES_PREPAYMENTS_PREFIX)
+                )
+
+                is_non_trade_inc = acc.startswith("Income:") and not acc.startswith("Income:Trade:")
+                if is_non_trade_exp or is_non_trade_inc:
                     if posting.units.currency != target_currency:
                         base_quote = (posting.units.currency, target_currency)
                         _, rate = prices.get_latest_price(price_map_to_date, base_quote)
                     else:
-                        rate = 1
+                        rate = decimal.Decimal(1)
 
-                    if is_nt_exp:
+                    if is_non_trade_exp:
                         non_trade_expenses += (posting.units.number * rate)
                     else:
                         non_trade_incomes -= (posting.units.number * rate)
@@ -134,37 +144,44 @@ def compute_networth_series(since_date, end_date=None):
             cum_invest_pnl += pnl
             cum_invest_pnl_ytd += pnl
         else:
+            pnl = None
             pnl_str = 'n/a'
             pnl_rate_str = 'n/a'
 
-        if curr_date.weekday() < 5:
-            daily_status = {
-                "日期": curr_date,
-                # 净资产=资产 - 负债（信用卡）, 包含了沉没资产
-                "净资产": "%.2f" % networth_in_cny,
-                # 可投资金额=净资产 - 不可支配资产（公积金、预付房租、宽带)
-                "可投资金额": "%.2f" % disposable_networth_in_cny,
-                # Income:Trade(已了结盈亏、分红) 以外的 Income (包含公积金收入、储蓄利息)
-                "非投资收入": "%.2f" % non_trade_incomes,
-                # Expenses:Trade 以外的 Expenses (包含社保等支出)
-                "非投资支出": "%.2f" % non_trade_expenses,
-                "投资盈亏": pnl_str,
-                # 投资盈亏% = 当日投资盈亏/昨日可投资金额
-                "投资盈亏%": pnl_rate_str,
-                "累计净值": "%.4f" % cum_invest_nav,
-                "累计盈亏": "%.2f" % cum_invest_pnl,
-                "当年净值": "%.4f" % cum_invest_nav_ytd,
-                "当年盈亏": "%.2f" % cum_invest_pnl_ytd,
-            }
+        daily_status = {
+            "日期": curr_date,
+            # 理论净资产=总资产 - 负债
+            "理论净资产": "%.2f" % raw_networth_in_cny,
+            # 净资产=总资产' - 负债（信用卡）- 沉没资产
+            "净资产": "%.2f" % networth_in_cny,
+            "沉没资产": "%.2f" % (raw_networth_in_cny - networth_in_cny),
+            # 可投资金额=净资产 - 不可支配资产（公积金、预付房租、宽带)
+            "可投资净资产": "%.2f" % disposable_networth_in_cny,
+            # Income:Trade(已了结盈亏、分红) 以外的 Income (包含公积金收入、储蓄利息)
+            "非投资收入": "%.2f" % non_trade_incomes,
+            # Expenses:Trade 以外的 Expenses (包含社保等支出)
+            "非投资支出": "%.2f" % non_trade_expenses,
+            "投资盈亏": pnl_str,
+            # 投资盈亏% = 当日投资盈亏/昨日可投资金额
+            "投资盈亏%": pnl_rate_str,
+            "累计净值": "%.4f" % cum_invest_nav,
+            "累计盈亏": "%.2f" % cum_invest_pnl,
+            "当年净值": "%.4f" % cum_invest_nav_ytd,
+            "当年盈亏": "%.2f" % cum_invest_pnl_ytd,
+        }
 
-            assert abs(sum(dnw_by_asset_class.values()) - disposable_networth_in_cny) < 1
+        if curr_date.weekday() >= 5:
+            if pnl is not None:
+                assert pnl <= 0.01, daily_status  # 预期周末不应该有投资盈亏
 
-            assert set(dnw_by_asset_class.keys()) <= KNOWN_ASSET_CLASSES, dnw_by_asset_class
-            for asset_class in KNOWN_ASSET_CLASSES:
-                propotion = 100 * dnw_by_asset_class.get(asset_class, 0) / disposable_networth_in_cny
-                daily_status[f"{asset_class}%"] = f"{propotion:.2f}%"
+        assert abs(sum(dnw_by_asset_class.values()) - disposable_networth_in_cny) < 1
 
-            result.append(daily_status)
+        assert set(dnw_by_asset_class.keys()) <= KNOWN_ASSET_CLASSES, dnw_by_asset_class
+        for asset_class in KNOWN_ASSET_CLASSES:
+            propotion = 100 * dnw_by_asset_class.get(asset_class, 0) / disposable_networth_in_cny
+            daily_status[f"{asset_class}%"] = f"{propotion:.2f}%"
+
+        result.append(daily_status)
 
 
         next_date = curr_date + datetime.timedelta(days=1)

@@ -57,8 +57,12 @@ class Source(source.Source):
         assert resp.status_code == 200, resp.text
         result_str = next(re.finditer("thecallback\((.*)\)", resp.text)).groups()[0]
         result = json.loads(result_str)
-        trade_date = result["Data"]["LSJZList"][0]["FSRQ"]
-        nav = D(result["Data"]["LSJZList"][0]["DWJZ"]).quantize(D('1.000000000000000000'))
+        records = result["Data"]["LSJZList"]
+        if len(records) == 0:
+            return
+
+        trade_date = records[0]["FSRQ"]
+        nav = D(records[0]["DWJZ"]).quantize(D('1.000000000000000000'))
         trade_date = datetime.strptime(trade_date, "%Y-%m-%d")
         trade_date = utils.default_tzinfo(trade_date, CN_TZ)
 
