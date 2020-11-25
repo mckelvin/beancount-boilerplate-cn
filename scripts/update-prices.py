@@ -31,13 +31,14 @@ def main(argv):
     print("echo > ledger/latest-prices.beancount")
     # 部分香港基金的净值更新时间比较慢，所以此处不用 last_date + 1
     start_date = last_date
-    end_date = datetime.datetime.now()
+    utc_now = datetime.datetime.utcnow()
+    end_date = utc_now
     for curr_date in yield_date_range(start_date, end_date):
-        if curr_date.date() == datetime.date.today():
+        if curr_date.date() == utc_now.date():
             suffix = f"| grep {curr_date:%Y-%m-%d} > ledger/latest-prices.beancount"
         else:
             suffix = f">> ledger/prices.beancount"
-        if not today_only or curr_date.date() == datetime.date.today():
+        if not today_only or curr_date.date() == utc_now.date():
             print(
                 f"PYTHONPATH=`pwd`/sources bean-price --no-cache -d {curr_date:%Y-%m-%d}"
                 f" ledger/main.beancount {suffix};"

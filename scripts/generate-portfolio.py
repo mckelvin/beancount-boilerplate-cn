@@ -11,16 +11,14 @@ import os
 import csv
 import datetime
 import logging
-import collections
 from decimal import Decimal
 import io
 
 import click
-import pandas as pd
 import beancount.loader
 import beancount.core.data
 from beancount.core import getters
-from beancount.reports import holdings_reports
+from beancount.ops.holdings import get_assets_holdings
 
 
 logger = logging.getLogger()
@@ -72,18 +70,21 @@ def get_portfolio_matrix(asof_date=None):
     (entries, errors, option_map) = beancount.loader.load_file(get_ledger_file())
     entries = [entry for entry in entries if entry.date <= asof_date]
 
-    assets_holdings, price_map = holdings_reports.get_assets_holdings(entries, option_map)
+    assets_holdings, price_map = get_assets_holdings(entries, option_map)
     account_map = get_account_map(entries)
-    commoditiy_map = getters.get_commodity_map(entries, create_missing=False)
+    commoditiy_map = getters.get_commodity_directives(entries)
 
     holding_groups = {}
     for holding in assets_holdings:
+        if holding.currency == "DAY":
+            continue
+
         account_obj = account_map[holding.account]
         if account_obj is None:
-            raise ValueError("account is not defined for %s" % holding)
+            raise ValueError(f"account is not defined for {holding}")
         currency_obj = commoditiy_map[holding.currency]
         if currency_obj is None:
-            raise ValueError("commoditiy is not defined for %s" % holding)
+            raise ValueError(f"commoditiy is not defined for {holding}")
 
         if bool(int(account_obj.meta.get("sunk", 0))):
             logger.warning(f"{account_obj.account} is an sunk. Ignored.")
@@ -120,7 +121,6 @@ def get_portfolio_matrix(asof_date=None):
         else:
             cny_rate = price_map[(currency, "CNY")][-1][1]
 
-        # 2. bloomberg_symbol
         holding_dict = {
             "account": account_name,
             "nondisposable": account_nondisposable,
@@ -133,7 +133,33 @@ def get_portfolio_matrix(asof_date=None):
             "price": price,
             "price_date": price_date,
             "cny_rate": cny_rate,
+            # optional:
+            # book_value
+            # market_value
+            #
+            # chg_1
+            # chg_5
+            # chg_30
         }
+
+        hld_prices = price_map.get((holding.currency, holding.cost_currency))
+        if hld_prices is not None and holding.cost_number is not None:
+            holding_dict["book_value"] = holding.book_value
+            holding_dict["market_value"] = holding.market_value
+
+            for dur in (1, 2, 7, 30):
+                if len(hld_prices) < dur:
+                    continue
+
+                base_date = asof_date - datetime.timedelta(days=dur)
+                latest_price = hld_prices[-1][1]
+                base_pxs = [(dt, px) for dt, px in hld_prices if dt <= base_date]
+                if base_pxs:
+                    base_price = base_pxs[-1][-1]  # O(N)!
+                    holding_dict[f"chg_{dur}"] = latest_price / base_price - 1
+                else:
+                    holding_dict[f"chg_{dur}"] = 'n/a'
+
         group_key = (symbol, account_nondisposable)
         holding_groups.setdefault(group_key, []).append(holding_dict)
 
@@ -141,10 +167,19 @@ def get_portfolio_matrix(asof_date=None):
     cum_networth = 0
     for (symbol, account_nondisposable), holdings in holding_groups.items():
         qty_by_account = {}
+        total_book_value = Decimal(0)
+        total_market_value = Decimal(0)
         for holding in holdings:
             if holding["account"] not in qty_by_account:
                 qty_by_account[holding["account"]] = 0
             qty_by_account[holding["account"]] += holding["quantity"]
+            if "book_value" in holding:
+                total_book_value += holding["book_value"]
+                total_market_value += holding["market_value"]
+        if total_book_value == 0:
+            pnlr = "n/a"
+        else:
+            pnlr = "%.4f%%" % ((total_market_value / total_book_value - 1) * 100)
 
         total_qty = sum(qty_by_account.values())
         hld_px = holding["price"]
@@ -164,8 +199,20 @@ def get_portfolio_matrix(asof_date=None):
             "市场价值": int(round(holding["price"] * total_qty)),
             "货币": holding["currency"],
             "人民币价值": "%.2f" % networth,
+            "持仓盈亏%": pnlr,
         }
+        for optional_col, col_name in [
+                ("chg_1", "1日%"),
+                ("chg_2", "2日%"),
+                ("chg_7", "7日%"),
+                ("chg_30", "30日%")
+            ]:
+            if optional_col not in holding or holding[optional_col] == 'n/a':
+                row[col_name] = "n/a"
+            else:
+                row[col_name] = "%.2f%%" % (holding[optional_col] * 100)
         rows.append(row)
+
     rows.sort(key=sort_key)
     for row in rows:
         pct = Decimal(row["人民币价值"]) / cum_networth

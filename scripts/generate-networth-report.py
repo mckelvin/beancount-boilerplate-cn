@@ -12,14 +12,10 @@ import io
 import decimal
 
 import click
-import pandas as pd
 import beancount.loader
 import beancount.core.data
-from beancount.core import getters
-from beancount.parser import options
 from beancount.core import prices
-from beancount.ops import holdings
-from beancount.reports import holdings_reports
+from beancount.ops.holdings import get_assets_holdings
 
 
 logger = logging.getLogger()
@@ -74,7 +70,7 @@ def compute_networth_series(since_date, end_date=None):
 
     while curr_date <= end_date:
         entries_to_date = [entry for entry in entries if entry.date <= curr_date]
-        holdings_list, price_map_to_date = holdings_reports.get_assets_holdings(
+        holdings_list, price_map_to_date = get_assets_holdings(
             entries_to_date, options_map, target_currency
         )
         raw_networth_in_cny = decimal.Decimal(0)  # 包含sunk资产的理论净资产
@@ -83,6 +79,9 @@ def compute_networth_series(since_date, end_date=None):
         dnw_by_asset_class = {}
 
         for hld in holdings_list:
+            if hld.currency == "DAY":
+                continue
+
             acc = account_map[hld.account]
             cmdt = commodity_map[hld.currency]
             if hld.market_value is None:
@@ -114,6 +113,10 @@ def compute_networth_series(since_date, end_date=None):
         non_trade_expenses = decimal.Decimal(0)
         non_trade_incomes = decimal.Decimal(0)
         for tx in txs_of_date:
+            is_time_tx = any((posting.units.currency == "DAY" for posting in tx.postings))
+            if is_time_tx:
+                continue
+
             for posting in tx.postings:
                 acc = posting.account
                 is_non_trade_exp = (
@@ -194,12 +197,19 @@ def compute_networth_series(since_date, end_date=None):
     return result
 
 
-def print_portfolio_csv(rows):
+def print_portfolio_csv(rows, transpose):
     fhandler = io.StringIO()
     writer = csv.DictWriter(fhandler, fieldnames=rows[0].keys())
     writer.writeheader()
     writer.writerows(rows)
-    print(fhandler.getvalue().strip())
+    if not transpose:
+        print(fhandler.getvalue().strip())
+        return
+
+    transposed = list(zip(*csv.reader(io.StringIO(fhandler.getvalue()))))
+    t_fhandler = io.StringIO()
+    csv.writer(t_fhandler).writerows(transposed)
+    print(t_fhandler.getvalue().strip())
 
 def add_padding(rows):
     curr_date = rows[-1]["日期"]
@@ -217,7 +227,8 @@ def add_padding(rows):
 @click.command()
 @click.option('-s', '--since', default=None)
 @click.option('--padding/--no-padding', default=False)
-def main(since, padding):
+@click.option('--transpose/--no-transpose', default=False)
+def main(since, padding, transpose):
     if since is None:
         today = datetime.date.today()
         since_date = datetime.date(today.year, 1, 1)
@@ -227,7 +238,7 @@ def main(since, padding):
     rows = compute_networth_series(since_date)
     if padding:
         rows = add_padding(rows)
-    print_portfolio_csv(rows)
+    print_portfolio_csv(rows, transpose)
 
 
 if __name__ == "__main__":
