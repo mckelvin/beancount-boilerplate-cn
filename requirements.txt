@@ -4,8 +4,6 @@
 #
 #    pip-compile
 #
---index-url https://pypi.doubanio.com/simple
-
 apiclient==1.0.4          # via -r requirements.in
 attrs==20.3.0             # via pytest
 babel==2.9.0              # via fava, flask-babel
@@ -31,7 +29,7 @@ iniconfig==1.1.1          # via pytest
 itsdangerous==1.1.0       # via flask
 jaraco.functools==3.0.1   # via cheroot
 jinja2==2.11.2            # via fava, flask, flask-babel
-lxml==4.6.1               # via beancount
+lxml==4.6.2               # via beancount
 markdown2==2.3.10         # via fava
 markupsafe==1.1.1         # via jinja2
 more-itertools==8.6.0     # via cheroot, jaraco.functools
